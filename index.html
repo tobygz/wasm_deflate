@@ -82,10 +82,12 @@ function f(){
 			var countStr = document.getElementById('count').value;
 			var count = parseInt(countStr,10);
 			var retStr = "";
+            var inputLen = 0;
 
 			var startMs = _getMs();
 			for(var i=0;i<count;i++){
 			const ary = Array.from(content).map(v=>v.charCodeAt(0));
+            inputLen = ary.length;
 			//const inBuffer = mallocByteBuffer(ary.length);
 			inBuffer.set(ary);
 
@@ -97,8 +99,11 @@ function f(){
 			retStr += String.fromCharCode(outBuffer[j]);
 			}
 			}
+
+            var rate = rett*1.0/inputLen;
 			var endMs = _getMs();
 			document.getElementById("result").innerHTML += //retStr+
+                " rate:" + rate +
 				" len:" + retStr.length +
 				" "+idname+
 				" count:" + count +
