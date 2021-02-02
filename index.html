@@ -1,0 +1,115 @@
+<html>
+<head>
+<title>wasm with compress</title>
+</head>
+<body >
+<script src="./deflate.js"></script>
+
+<div>
+<div>
+<input type='text' id='content' value='Hello'></input>
+<input type='text' id='count' value='1024'></input>
+<button id='testCompress'>compress</button>
+<button id='testDeCompress'>deCompress</button>
+<button id='clear'>clearOutput</button>
+</div>
+<div>
+<p id="result"></p>
+</div>
+</div>
+
+<script>
+var inited = 0;
+var outBuffer;
+var inBuffer;
+
+	var loadStart = Date.now();
+function mallocByteBuffer(len){
+	const ptr = _malloc(len);
+	const heapBytes = new Uint8Array(HEAP8.buffer,ptr, len);
+	return heapBytes;
+}
+
+Module.onRuntimeInitialized = () => {
+var loadEnd = Date.now();
+	inited = 1;
+	outBuffer = mallocByteBuffer(1024*8);
+	inBuffer = mallocByteBuffer(1024*8);
+	document.getElementById("result").innerHTML +=  " Module.onRuntimeInitialized use ms:" + (Date.now() - loadStart) +" ms<br>";
+	console.log("called in onRuntimeInitialized");
+	f();
+}
+
+
+function f(){
+	var btnDeCompress = document.getElementById('clear');
+	btnDeCompress.addEventListener("click", function(){
+			document.getElementById("result").innerHTML = "";
+			});
+
+	var btnDeCompress = document.getElementById('testDeCompress');
+	btnDeCompress.addEventListener("click", function(){
+			var idname = 'testDeCompress';
+
+			var countStr = document.getElementById('count').value;
+			var count = parseInt(countStr,10);
+			var retStr = "";
+
+			var startMs = _getMs();
+			for(var i=0;i<count;i++){
+			//alloc result mem
+			var rett = _zlibDecompress(outBuffer.byteOffset,outBuffer.byteLength, inBuffer.byteOffset, inBuffer.byteLength);
+			retStr ="";
+			for(var j=0;j<rett;j++){
+			retStr += String.fromCharCode(inBuffer[j]);
+			}
+			}
+			var endMs = _getMs();
+			document.getElementById("result").innerHTML += 
+			//retStr +
+			" "+idname+
+			" count:" + count +
+			" total:" + (endMs-startMs) + " ms;"+
+			" avg:" + (endMs-startMs)/count + " ms;"+
+			" ms<br>";
+	})
+
+
+	var btnCompress = document.getElementById('testCompress');
+	btnCompress.addEventListener("click", function(){
+			var idname = 'testCompress';
+			var content = document.getElementById('content').value;
+			var countStr = document.getElementById('count').value;
+			var count = parseInt(countStr,10);
+			var retStr = "";
+
+			var startMs = _getMs();
+			for(var i=0;i<count;i++){
+			const ary = Array.from(content).map(v=>v.charCodeAt(0));
+			//const inBuffer = mallocByteBuffer(ary.length);
+			inBuffer.set(ary);
+
+			//alloc result mem
+			var rett = _zlibCompress(inBuffer.byteOffset,ary.length, outBuffer.byteOffset, outBuffer.byteLength);
+
+			retStr ="";
+			for(var j=0;j<rett;j++){
+			retStr += String.fromCharCode(outBuffer[j]);
+			}
+			}
+			var endMs = _getMs();
+			document.getElementById("result").innerHTML += //retStr+
+				" len:" + retStr.length +
+				" "+idname+
+				" count:" + count +
+				" total:" + (endMs-startMs)+" ms;" +
+				" avg:" + (endMs-startMs)/count+" ms;" +
+				" <br>";
+	})
+}
+
+
+</script>
+
+</body>
+</html>
